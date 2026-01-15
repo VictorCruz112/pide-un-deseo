@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¡Feliz Cumpleaños Tía Isa!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Dancing+Script:wght@700&family=Great+Vibes&display=swap" rel="stylesheet">
+  <style>
+    /* --- CONFIGURACIÓN BASE --- */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background-color: #1a0a0d;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: default;
+    }
+
+    ::-webkit-scrollbar { display: none; }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      color: #fff;
+    }
+
+    /* --- FONDO --- */
+    #background-static {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: -2;
+      background-color: #222;
+      background-image: url('fondo_principal.jpg'); 
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.35);
+    }
+
+    /* --- REPRODUCTOR MINI --- */
+    #music-control {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 3000;
+      background: rgba(255, 77, 109, 0.8);
+      border: 2px solid white;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: none; 
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: transform 0.3s;
+    }
+    #music-control:hover { transform: scale(1.1); }
+    #music-control.muted { background: rgba(100, 100, 100, 0.8); }
+
+    /* --- COMPUERTAS --- */
+    #gate-left, #gate-right {
+      position: fixed;
+      top: 0; width: 50%; height: 100%;
+      background: linear-gradient(135deg, #ff4d6d 0%, #ff758c 100%);
+      z-index: 400;
+      transition: transform 1.8s cubic-bezier(0.7, 0, 0.3, 1);
+      display: flex; justify-content: center; align-items: center;
+      box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    }
+    #gate-left { left: 0; border-right: 2px solid rgba(255,255,255,0.2); }
+    #gate-right { right: 0; border-left: 2px solid rgba(255,255,255,0.2); }
+    
+    .gate-opened #gate-left { transform: translateX(-100%); }
+    .gate-opened #gate-right { transform: translateX(100%); }
+
+    /* --- BOTÓN DISPARADOR --- */
+    #cake-trigger {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 401;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.5s ease;
+      width: 250px;
+      height: 250px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .trigger-img-wrapper {
+      width: 200px;
+      height: 200px;
+      position: relative;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 4px solid white;
+      background: white;
+    }
+
+    #random-trigger-img { 
+      width: 100%; 
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .gate-opened #cake-trigger { opacity: 0; pointer-events: none; transform: translate(-50%, -50%) scale(0); }
+
+    #ui-text {
+      margin-top: 15px;
+      font-family: 'Dancing Script', cursive;
+      font-size: 1.4rem;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+      background: rgba(255, 77, 109, 0.8);
+      padding: 5px 20px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    /* --- CONTENIDO PRINCIPAL --- */
+    #main-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 1s;
+      pointer-events: none;
+    }
+    .gate-opened #main-content { opacity: 1; pointer-events: auto; }
+
+    .app-section {
+      display: none;
+      width: 100%;
+      max-width: 850px;
+      margin: 0 auto;
+      padding: 20px;
+      height: 100vh;
+      overflow-y: auto;
+      flex-direction: column;
+      animation: fadeIn 0.8s ease;
+    }
+    .app-section.active { display: flex; }
+
+    .fancy-title {
+      text-align: center;
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(2.2rem, 8vw, 3.8rem);
+      margin-bottom: 20px;
+      background: linear-gradient(to right, #ffffff, #ffd700, #ffffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: titleGlow 3s ease-in-out infinite;
+    }
+
+    /* --- ESTILO DE LA CARTA --- */
+    .letter-card {
+      background: #fdf5e6;
+      background-image: radial-gradient(#f3e5ab 1px, transparent 0);
+      background-size: 30px 30px;
+      color: #333;
+      padding: clamp(25px, 6vw, 45px);
+      border-radius: 4px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+      line-height: 1.8;
+      border: 1px solid #d2b48c;
+      font-size: clamp(1rem, 3.2vw, 1.2rem);
+      text-align: justify;
+    }
+    
+    .letter-signature {
+        font-family: 'Great Vibes', cursive;
+        font-size: clamp(2.2rem, 7vw, 3rem);
+        color: #b22222;
+        display: block;
+        margin-top: 30px;
+        text-align: right;
+    }
+
+    .btn-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 25px;
+    }
+
+    .nav-btn {
+      background: #ff4d6d;
+      color: white;
+      border: 2px solid #fff;
+      padding: 12px 20px;
+      border-radius: 50px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      transition: 0.3s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      flex: 1;
+      min-width: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .nav-btn:hover { background: #ff758c; transform: translateY(-3px); }
+
+    /* --- GALERÍAS --- */
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 30px;
+        padding: 20px 10px 100px 10px;
+        width: 100%;
+        justify-items: center;
+    }
+
+    .media-frame {
+        background: white;
+        padding: 10px 10px 15px 10px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        transition: all 0.4s ease;
+        border: 1px solid #ddd;
+        width: 100%;
+        max-width: 280px;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .media-frame:hover {
+        transform: scale(1.03) translateY(-5px) !important;
+        z-index: 10;
+        border-color: #ffd700;
+    }
+
+    .media-frame img, .media-frame video { 
+        width: 100%; 
+        aspect-ratio: 1/1; 
+        object-fit: cover; 
+        display: block;
+        border-radius: 2px;
+    }
+
+    .play-overlay {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 3rem;
+        color: rgba(255, 255, 255, 0.8);
+        pointer-events: none;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+
+    .media-caption {
+        margin-top: 12px;
+        color: #444;
+        font-size: 0.9rem;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    /* --- OVERLAYS Y ZOOM --- */
+    #photo-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.95);
+        z-index: 4000; 
+        display: none;
+        justify-content: center; align-items: center;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+    }
+    #photo-overlay.show { display: flex; opacity: 1; }
+
+    #photo-overlay img, #photo-overlay video {
+        max-width: 90%; 
+        max-height: 75%;
+        border: 4px solid white;
+        transform: scale(0.2);
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 0 30px rgba(255,255,255,0.2);
+        background: black;
+    }
+    
+    #photo-overlay.show img, #photo-overlay.show video { transform: scale(1); }
+
+    /* Los controles del video deben ser clickeables */
+    #zoom-video {
+        pointer-events: auto !important;
+        z-index: 4005;
+        cursor: pointer;
+    }
+
+    .close-zoom-btn {
+        position: absolute; 
+        top: 20px; right: 20px;
+        background: #ff4d6d; 
+        color: white; 
+        border: 2px solid white;
+        width: 48px; height: 48px; 
+        border-radius: 50%;
+        font-size: 1.3rem; 
+        cursor: pointer;
+        display: flex; justify-content: center; align-items: center;
+        z-index: 4100;
+    }
+
+    #image-source-list { display: none; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes titleGlow {
+      0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.3)); }
+      50% { filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.5)); }
+    }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+
+  <div id="background-static"></div>
+
+  <!-- Audios -->
+  <audio id="audio-welcome" src="Imagenes/Bienvenida.wav" preload="auto"></audio>
+  <audio id="audio-bg" loop preload="auto"></audio>
+
+  <!-- LISTA DE IMÁGENES PARA DISPARADOR -->
+  <div id="image-source-list">
+    <span data-src="Imagenes/Pastel2.jpg"></span>
+    <span data-src="Imagenes/Circulo.Png"></span>
+    <span data-src="Imagenes/Pastel 3.jpg"></span>
+    <span data-src="Imagenes/Pastel6.jpg"></span>
+    <span data-src="Imagenes/Pastel 8.jpg"></span>
+    <span data-src="Imagenes/Pastel.jpg"></span>
+  </div>
+
+  <div id="music-control" onclick="toggleMusic()">
+    <span id="music-icon" style="font-size: 20px;">🎵</span>
+  </div>
+
+  <!-- Overlay para Zoom de fotos/videos -->
+  <div id="photo-overlay" onclick="closeZoom()">
+      <button class="close-zoom-btn" onclick="closeZoom()">✕</button>
+      <img id="zoom-img" src="" alt="Zoom" onclick="event.stopPropagation()">
+      <video id="zoom-video" controls playsinline webkit-playsinline onclick="handleVideoClick(event)" style="display:none;"></video>
+  </div>
+
+  <div id="cake-trigger" onclick="openGates()">
+    <div class="trigger-img-wrapper">
+      <img id="random-trigger-img" src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Disparador"> 
+    </div>
+    <div id="ui-text">¡Entra aquí, Tía Isa!</div>
+  </div>
+
+  <div id="gate-left"></div>
+  <div id="gate-right"></div>
+
+  <div id="main-content">
+    
+    <section id="section-home" class="app-section active">
+        <h1 class="fancy-title">¡Feliz Cumpleaños!</h1>
+        <div class="letter-card">
+          <p>¡Feliz cumpleaños, Tía Isa! 🎉</p>
+          <p>Espero que la estés pasando increíble por allá. La verdad es que se siente raro no poder darte el abrazo en persona hoy, pero te lo mando con todo el cariño del mundo hasta donde estás.</p>
+          <p>Se te extraña un montón en la familia, pero siempre te tenemos muy presente. Gracias por ser tan especial conmigo siempre. ¡Disfruta mucho tu día, cómete algo rico por mí y que sea un año espectacular!</p>
+          <span class="letter-signature">Te quiero mucho, Tía. ❤️</span>
+        </div>
+        
+        <div class="btn-container">
+            <button class="nav-btn" onclick="navigateTo('section-video-main')">🎥 El Video</button>
+            <button class="nav-btn" onclick="showGallery('fotos')">📸 Ver Fotos</button>
+            <button class="nav-btn" onclick="showGallery('videos')">🎬 Ver Videos</button>
+        </div>
+    </section>
+
+    <section id="section-video-main" class="app-section">
+        <h2 class="fancy-title">Un mensaje para ti ❤️</h2>
+        <div style="background: #000; padding: 6px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+            <video id="birthday-video" controls playsinline style="width: 100%; border-radius: 8px; display: block;">
+                <source src="Video principal.mp4" type="video/mp4"> 
+            </video>
+        </div>
+        <div class="btn-container">
+            <button class="nav-btn" onclick="showGallery('videos')">⏭️ Más Videos</button>
+            <button class="nav-btn" style="background:rgba(255,255,255,0.1);" onclick="navigateTo('section-home')">⬅ Volver</button>
+        </div>
+    </section>
+
+    <section id="section-gallery" class="app-section">
+        <h2 id="gallery-title" class="fancy-title">Recuerdos</h2>
+        <div class="media-grid" id="gallery-container"></div>
+        <button class="nav-btn" style="margin: 20px auto 60px auto; display: block; max-width: 300px;" onclick="navigateTo('section-home')">⬅ Volver al Inicio</button>
+    </section>
+
+  </div>
+
+  <script>
+/* ===============================
+   CONFIGURACIÓN GENERAL
+================================ */
+const URL_MUSICA_FONDO = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+
+const fotos = [
+  { url: "Imagenes/Isacompu.jpg", text: "Tía Isa en la compu" },
+  { url: "Imagenes/Isagato.jpg", text: "Con su gatito" },
+  { url: "Imagenes/Isapastel.jpg", text: "Cumple con Nohemy" },
+  { url: "Imagenes/FotoIsa.jpg", text: "Momentos felices" },
+  { url: "Imagenes/Regalo.jpg", text: "Una sorpresa" },
+  { url: "Imagenes/Pose.JPEG", text: "Pose" },
+  { url: "Imagenes/Amigas.JPEG", text: "Soul sisters" },
+  { url: "Imagenes/Mamatere.Jpg", text: "La jefa de jefas" },
+  { url: "Imagenes/Sincontexto.Jpg", text: "Siesta en movimiento." },
+  { url: "Imagenes/Abuelas.Jpg", text: "Aquí mandan ellas." },
+  { url: "Imagenes/Sobrinos.Jpg", text: "Los consentidos." },
+  { url: "Imagenes/Primeraño.JPEG", text: "Cara de aburrida." },
+  { url: "Imagenes/Segunda.Jpg", text: "Princesa por elección." },
+  { url: "Imagenes/Regalo1.Jpg", text: "Tres contra el mundo." },
+  { url: "Imagenes/Navidad.Jpg", text: "Buscando el postre." },
+  { url: "Imagenes/Navidad1.Jpg", text: "Buscando el postre." },
+  { url: "Imagenes/Emprendimiento.Jpg", text: "Emprendedores" },
+  { url: "Imagenes/Tercera bondad.Jpg", text: "Paso por la cocina." },
+  { url: "Imagenes/MamaT.JPEG", text: "La mera jefa." }
+];
+
+const videosRecuerdos = [
+  { url: "Imagenes/Cumpleaños omar2.mp4", text: "Cumpleaños de Omar" },
+  { url: "Imagenes/Cumpleaños3.mp4", text: "Celebración especial" },
+  { url: "Imagenes/Cumpleaños4.mp4", text: "Adultos siendo niños." }
+];
+
+/* ===============================
+   AUDIO
+================================ */
+const audioWelcome = document.getElementById('audio-welcome');
+const audioBG = document.getElementById('audio-bg');
+const musicControl = document.getElementById('music-control');
+const musicIcon = document.getElementById('music-icon');
+
+let isMusicManuallyPaused = false;
+
+function stopBackgroundMusic() {
+  audioBG.pause();
+  audioBG.currentTime = 0;
+}
+
+function playBackgroundMusic() {
+  audioBG.src = URL_MUSICA_FONDO;
+  audioBG.muted = false;
+  audioBG.volume = 0;
+  audioBG.play().catch(() => {});
+  let v = 0;
+  const fade = setInterval(() => {
+    if (v < 0.4) {
+      v += 0.05;
+      audioBG.volume = v;
+    } else {
+      clearInterval(fade);
+    }
+  }, 200);
+  musicIcon.textContent = "🎵";
+  musicControl.classList.remove('muted');
+}
+
+function resumeBackgroundMusicIfAllowed() {
+  if (!isMusicManuallyPaused) playBackgroundMusic();
+}
+
+function toggleMusic() {
+  if (audioBG.paused) {
+    isMusicManuallyPaused = false;
+    playBackgroundMusic();
+  } else {
+    isMusicManuallyPaused = true;
+    audioBG.pause();
+    musicIcon.textContent = "🔇";
+    musicControl.classList.add('muted');
+  }
+}
+
+/* ===============================
+   INICIO
+================================ */
+window.onload = function () {
+  const triggerImg = document.getElementById('random-trigger-img');
+  const sourceElements = document.querySelectorAll('#image-source-list span');
+  if (sourceElements.length > 0) {
+    const imagenes = Array.from(sourceElements).map(el => el.dataset.src);
+    triggerImg.src = imagenes[Math.floor(Math.random() * imagenes.length)];
+  }
+};
+
+/* ===============================
+   COMPUERTAS
+================================ */
+function openGates() {
+  document.body.classList.add('gate-opened');
+  musicControl.style.display = 'flex';
+  audioWelcome.play().catch(() => {});
+  audioWelcome.onended = () => resumeBackgroundMusicIfAllowed();
+}
+
+/* ===============================
+   NAVEGACIÓN
+================================ */
+function navigateTo(id) {
+  document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  const vidMain = document.getElementById('birthday-video');
+  if (vidMain) {
+    vidMain.pause();
+    vidMain.muted = true;
+  }
+
+  closeZoom();
+
+  if (id === 'section-home') resumeBackgroundMusicIfAllowed();
+  else stopBackgroundMusic();
+}
+
+/* ===============================
+   GALERÍAS
+================================ */
+function showGallery(type) {
+  const container = document.getElementById('gallery-container');
+  const title = document.getElementById('gallery-title');
+  container.innerHTML = "";
+
+  if (type === 'fotos') {
+    title.innerText = "Galería de Fotos";
+    fotos.forEach(i => container.appendChild(createMediaFrame('img', i.url, i.text)));
+  } else {
+    title.innerText = "Galería de Videos";
+    videosRecuerdos.forEach(i => container.appendChild(createMediaFrame('video', i.url, i.text)));
+  }
+
+  navigateTo('section-gallery');
+}
+
+function createMediaFrame(tag, url, text) {
+  const frame = document.createElement('div');
+  frame.className = 'media-frame';
+  frame.style.transform = `rotate(${Math.random() * 8 - 4}deg)`;
+
+  const media = document.createElement(tag);
+  media.src = url;
+
+  if (tag === 'video') {
+    media.muted = true;
+    const playIcon = document.createElement('div');
+    playIcon.className = 'play-overlay';
+    playIcon.innerHTML = '▶';
+    frame.appendChild(playIcon);
+    frame.onclick = () => openZoom(url, 'video');
+  } else {
+    frame.onclick = () => openZoom(url, 'image');
+  }
+
+  const caption = document.createElement('div');
+  caption.className = 'media-caption';
+  caption.innerText = text;
+
+  frame.appendChild(media);
+  frame.appendChild(caption);
+  return frame;
+}
+
+/* ===============================
+   ZOOM (CORREGIDO AUDIO)
+================================ */
+function openZoom(url, type) {
+  const overlay = document.getElementById('photo-overlay');
+  const zoomImg = document.getElementById('zoom-img');
+  const zoomVideo = document.getElementById('zoom-video');
+
+  stopBackgroundMusic();
+
+  if (type === 'video') {
+    zoomImg.style.display = 'none';
+    zoomVideo.style.display = 'block';
+    zoomVideo.src = url;
+    zoomVideo.muted = true;
+    zoomVideo.volume = 1;
+    zoomVideo.controls = true;
+    overlay.style.display = 'flex';
+    setTimeout(() => overlay.classList.add('show'), 50);
+  } else {
+    zoomVideo.pause();
+    zoomVideo.style.display = 'none';
+    zoomImg.style.display = 'block';
+    zoomImg.src = url;
+    overlay.style.display = 'flex';
+    setTimeout(() => overlay.classList.add('show'), 50);
+  }
+}
+
+function closeZoom() {
+  const overlay = document.getElementById('photo-overlay');
+  const zoomVideo = document.getElementById('zoom-video');
+  overlay.classList.remove('show');
+  zoomVideo.pause();
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    zoomVideo.src = "";
+    resumeBackgroundMusicIfAllowed();
+  }, 400);
+}
+
+document.getElementById('birthday-video').onended = () => showGallery('videos');
+</script>
+
+
+</body>
+</html>
